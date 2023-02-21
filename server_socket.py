@@ -1,31 +1,30 @@
-import socket
 import utilities
+from twisted.internet import protocol, reactor
+import json
 
 
-def create_socket_listener():
-    # Create a socket object
-    s = socket.socket()
-    ip_address = utilities.server_settings['ip_address']
-    port_number = utilities.server_settings['port_number']
-    # Bind to the port
-    s.bind((ip_address, port_number))
-
-    # Put the socket into listening mode
-    s.listen(5)
-    print("Socket is listening")
-
-    # A forever loop until we interrupt it or an error occurs
-    while True:
-        # Establish connection with client.
-        c, addr = s.accept()
-        print('Got connection from', addr)
+class ListenAndReply(protocol.Protocol):
+    def dataReceived(self, data):
+        client_ip = str(self.transport.getHost().host)
+        print(f'Received connection from {client_ip}')
         # If we are restricting clients and the client address is not in allowed_clients, close the connection
-        if utilities.server_settings['allowed_clients'] != '*' and \
-                addr[0] not in utilities.server_settings['allowed_clients']:
-            print(f'Client address {addr[0]} is not in allowed_clients')
-            c.close()
-            continue
-        # send a thank-you message to the client.
-        c.send(b'Thank you for connecting')
-        # Close the connection with the client
-        c.close()
+        if utilities.server_settings(file_path='settings.conf')['allowed_clients'] != '*' and \
+                client_ip not in utilities.server_settings(file_path='settings.conf')['allowed_clients']:
+            print(f'Client address {client_ip} is not in allowed_clients')
+            self.transport.loseConnection()
+            return
+        print(f'Received: {data}')
+        self.transport.write(bytes(json.dumps(utilities.server_settings('settings.conf')), 'utf-8'))
+        self.transport.write(data)
+
+
+def main():
+    factory = protocol.ServerFactory()
+    factory.protocol = ListenAndReply
+    reactor.listenTCP(utilities.server_settings(file_path='settings.conf')
+                      ['backend_server_manager_listen_port'], factory)
+    reactor.run()
+
+
+if __name__ == "__main__":
+    main()
