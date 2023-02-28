@@ -1,6 +1,7 @@
 import utilities
 from twisted.internet import protocol, reactor
 import json
+import server_commands
 
 
 class ListenAndReply(protocol.Protocol):
@@ -13,18 +14,13 @@ class ListenAndReply(protocol.Protocol):
             print(f'Client address {client_ip} is not in allowed_clients')
             self.transport.loseConnection()
             return
-        print(f'Received: {data}')
-        self.transport.write(bytes(json.dumps(utilities.server_settings('settings.conf')), 'utf-8'))
-        self.transport.write(data)
+        command_result = server_commands.parse(utilities.bytes_to_string(data))
+        self.transport.write(utilities.string_to_bytes(command_result))
 
 
-def main():
+def start():
     factory = protocol.ServerFactory()
     factory.protocol = ListenAndReply
     reactor.listenTCP(utilities.server_settings(file_path='settings.conf')
                       ['backend_server_manager_listen_port'], factory)
     reactor.run()
-
-
-if __name__ == "__main__":
-    main()
