@@ -1,0 +1,2 @@
+Twisted>=22.10.0
+factorio-rcon-py>=2.0.1
