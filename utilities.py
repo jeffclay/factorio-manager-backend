@@ -1,5 +1,6 @@
 import sys
 import os
+from subprocess import call
 
 
 def server_settings(file_path) -> 'dictionary of settings':
@@ -33,3 +34,19 @@ def server_settings(file_path) -> 'dictionary of settings':
                 continue
             settings_dict[key] = value
         return settings_dict
+
+
+def clear():
+    # check and make call for specific operating system
+    _ = call('clear' if os.name == 'posix' else 'cls')
+
+
+def bytes_to_string(bytes_object) -> str:
+    # Convert bytes to string
+    return bytes_object.decode('utf-8')
+
+
+def string_to_bytes(string) -> bytes:
+    # Convert string to bytes
+    return bytes(string, 'utf-8')
+
